@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,8 +26,6 @@ public class HazardZoneServiceImpl implements HazardZoneService {
         zone.setName(request.getName());
         zone.setSeverity(request.getSeverity());
         zone.setPolygonCoordinates(request.getPolygonCoordinates());
-        zone.setAllowedObjects(request.getAllowedObjects());
-        zone.setBlockedObjects(request.getBlockedObjects());
 
         HazardZone saved = hazardZoneRepository.save(zone);
 

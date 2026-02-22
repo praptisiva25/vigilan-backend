@@ -17,12 +17,12 @@ public class HazardZone {
 
     private String severity;
 
-    @Lob
-    private String polygonCoordinates; // JSON string
+    @Column(columnDefinition = "TEXT")
+    private String polygonCoordinates;
 
-    @Lob
-    private String allowedObjects; // JSON string
+    @Column(columnDefinition = "TEXT")
+    private String allowedObjects;
 
-    @Lob
-    private String blockedObjects; // JSON string
+    @Column(columnDefinition = "TEXT")
+    private String blockedObjects;
 }

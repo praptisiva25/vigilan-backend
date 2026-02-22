@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/videos")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class VideoController {
 
     private final VideoService videoService;
@@ -26,10 +25,6 @@ public class VideoController {
             @RequestParam Double longitude
     ) throws IOException {
 
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
         VideoResponseDTO response =
                 videoService.uploadVideo(file, cameraId, latitude, longitude);
 
@@ -37,7 +32,7 @@ public class VideoController {
     }
 
     @GetMapping
-    public List<VideoResponseDTO> getAllVideos() {
-        return videoService.getAllVideos();
+    public ResponseEntity<List<VideoResponseDTO>> getAllVideos() {
+        return ResponseEntity.ok(videoService.getAllVideos());
     }
 }

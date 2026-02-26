@@ -7,7 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class MonitoringJobResponseDTO {
 
-    private Long id;
+    private Long jobId;
     private String status;
     private int progress;
 }

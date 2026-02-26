@@ -8,7 +8,6 @@ import lombok.Data;
 public class HazardZoneResponseDTO {
 
     private Long id;
-    private Long videoId;
     private String name;
     private String severity;
     private String polygonCoordinates;

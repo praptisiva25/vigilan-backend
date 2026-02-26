@@ -11,8 +11,6 @@ public class HazardZone {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long videoId;
-
     private String name;
 
     private String severity;
@@ -25,4 +23,8 @@ public class HazardZone {
 
     @Column(columnDefinition = "TEXT")
     private String blockedObjects;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "video_id", nullable = false)
+    private Video video;
 }

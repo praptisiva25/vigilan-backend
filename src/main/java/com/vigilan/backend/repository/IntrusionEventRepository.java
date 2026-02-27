@@ -9,4 +9,5 @@ public interface IntrusionEventRepository extends JpaRepository<IntrusionEvent, 
 
     List<IntrusionEvent> findByMonitoringJob_Id(Long jobId);
 
+    boolean existsByMonitoringJob_IdAndObjectIdAndEntryTimeSeconds(Long monitoringJobId, Long objectId, Double entryTimeSeconds);
 }

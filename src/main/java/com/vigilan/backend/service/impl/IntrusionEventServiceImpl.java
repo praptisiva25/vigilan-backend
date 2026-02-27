@@ -25,12 +25,41 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
     @Override
     public void createIntrusion(IntrusionEventRequestDTO request) {
 
+        // 🔥 1. Basic validation
+        if (request.getMonitoringJobId() == null ||
+                request.getHazardZoneId() == null ||
+                request.getObjectId() == null ||
+                request.getEntryTimeSeconds() == null ||
+                request.getExitTimeSeconds() == null ||
+                request.getDurationSeconds() == null) {
+            return;
+        }
+
+        // 🔥 2. Ignore micro intrusions (noise filter)
+        if (request.getDurationSeconds() < 1.0) {
+            return;
+        }
+
+        // 🔥 3. Prevent duplicate events (SQS retry safe)
+        boolean exists = intrusionEventRepository
+                .existsByMonitoringJob_IdAndObjectIdAndEntryTimeSeconds(
+                        request.getMonitoringJobId(),
+                        request.getObjectId(),
+                        request.getEntryTimeSeconds()
+                );
+
+        if (exists) {
+            return;
+        }
+
+        // 🔥 4. Fetch related entities
         MonitoringJob job = monitoringJobRepository.findById(request.getMonitoringJobId())
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
         HazardZone zone = hazardZoneRepository.findById(request.getHazardZoneId())
                 .orElseThrow(() -> new RuntimeException("Zone not found"));
 
+        // 🔥 5. Create and save event
         IntrusionEvent event = new IntrusionEvent();
         event.setMonitoringJob(job);
         event.setHazardZone(zone);
@@ -46,8 +75,8 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
     private IntrusionEventResponseDTO mapToDTO(IntrusionEvent event) {
         return new IntrusionEventResponseDTO(
                 event.getId(),
-                event.getMonitoringJob().getId(),   // jobId
-                event.getHazardZone().getId(),      // zoneId
+                event.getMonitoringJob().getId(),
+                event.getHazardZone().getId(),
                 event.getObjectId(),
                 event.getEntryTimeSeconds(),
                 event.getExitTimeSeconds(),

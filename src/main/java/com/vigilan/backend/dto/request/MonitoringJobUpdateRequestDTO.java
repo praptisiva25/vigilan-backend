@@ -6,5 +6,5 @@ import lombok.Data;
 public class MonitoringJobUpdateRequestDTO {
 
     private String status;
-    private int progress;
+    private Integer progress;
 }

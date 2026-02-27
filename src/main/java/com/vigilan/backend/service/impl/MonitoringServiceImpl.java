@@ -1,5 +1,6 @@
 package com.vigilan.backend.service.impl;
 
+import com.vigilan.backend.dto.queue.MonitoringJobMessage;
 import com.vigilan.backend.dto.request.MonitoringJobUpdateRequestDTO;
 import com.vigilan.backend.dto.response.HazardZoneResponseDTO;
 import com.vigilan.backend.dto.response.MonitoringContextResponseDTO;
@@ -9,17 +10,12 @@ import com.vigilan.backend.entity.Video;
 import com.vigilan.backend.repository.MonitoringJobRepository;
 import com.vigilan.backend.repository.VideoRepository;
 import com.vigilan.backend.service.MonitoringService;
+import com.vigilan.backend.service.QueueService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +23,7 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     private final MonitoringJobRepository jobRepository;
     private final VideoRepository videoRepository;
-
-    private static final String PYTHON_URL = "http://localhost:8000/process-job";
+    private final QueueService queueService;
 
     @Override
     public MonitoringJobResponseDTO startMonitoring(Long videoId, String mode) {
@@ -45,21 +40,14 @@ public class MonitoringServiceImpl implements MonitoringService {
 
         MonitoringJob saved = jobRepository.save(job);
 
-        // 🔥 CALL PYTHON SERVICE
-        RestTemplate restTemplate = new RestTemplate();
+        // Send message to SQS
+        MonitoringJobMessage message = new MonitoringJobMessage(
+                saved.getId(),
+                saved.getVideo().getFilePath(),
+                saved.getMode()
+        );
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("jobId", saved.getId());
-        payload.put("videoPath", saved.getVideo().getFilePath());
-        payload.put("mode", saved.getMode());
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> request =
-                new HttpEntity<>(payload, headers);
-
-        restTemplate.postForObject(PYTHON_URL, request, String.class);
+        queueService.sendMonitoringJob(message);
 
         return new MonitoringJobResponseDTO(
                 saved.getId(),
@@ -115,14 +103,30 @@ public class MonitoringServiceImpl implements MonitoringService {
         MonitoringJob job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        if (request.getStatus() != null) {
-            job.setStatus(request.getStatus());
+        // 🔒 If already completed or failed, ignore further updates
+        if ("COMPLETED".equals(job.getStatus()) || "FAILED".equals(job.getStatus())) {
+            return;
         }
 
-        job.setProgress(request.getProgress());
+        // Update status first
+        if (request.getStatus() != null) {
+            job.setStatus(request.getStatus());
 
-        if ("COMPLETED".equals(request.getStatus())) {
-            job.setFinishedAt(LocalDateTime.now());
+            if ("COMPLETED".equals(request.getStatus())) {
+                job.setProgress(100);  // Force 100%
+                job.setFinishedAt(LocalDateTime.now());
+            }
+
+            if ("FAILED".equals(request.getStatus())) {
+                job.setFinishedAt(LocalDateTime.now());
+            }
+        }
+
+
+        if (request.getProgress() != null && !"COMPLETED".equals(job.getStatus())) {
+
+            int safeProgress = Math.min(request.getProgress(), 99);
+            job.setProgress(safeProgress);
         }
 
         jobRepository.save(job);

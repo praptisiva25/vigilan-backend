@@ -5,8 +5,10 @@ import com.vigilan.backend.dto.request.MonitoringJobUpdateRequestDTO;
 import com.vigilan.backend.dto.response.HazardZoneResponseDTO;
 import com.vigilan.backend.dto.response.MonitoringContextResponseDTO;
 import com.vigilan.backend.dto.response.MonitoringJobResponseDTO;
+import com.vigilan.backend.entity.HazardZone;
 import com.vigilan.backend.entity.MonitoringJob;
 import com.vigilan.backend.entity.Video;
+import com.vigilan.backend.repository.HazardZoneRepository;
 import com.vigilan.backend.repository.MonitoringJobRepository;
 import com.vigilan.backend.repository.VideoRepository;
 import com.vigilan.backend.service.MonitoringService;
@@ -14,7 +16,6 @@ import com.vigilan.backend.service.QueueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,23 +24,35 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     private final MonitoringJobRepository jobRepository;
     private final VideoRepository videoRepository;
+    private final HazardZoneRepository hazardZoneRepository;
     private final QueueService queueService;
 
     @Override
-    public MonitoringJobResponseDTO startMonitoring(Long videoId) {
+    public MonitoringJobResponseDTO startMonitoring(Long videoId, List<Long> zoneIds) {
+
+        if (zoneIds == null || zoneIds.isEmpty()) {
+            throw new RuntimeException("At least one hazard zone must be selected");
+        }
 
         Video video = videoRepository.findById(videoId)
                 .orElseThrow(() -> new RuntimeException("Video not found"));
 
+        // Fetch selected zones
+        List<HazardZone> selectedZones = hazardZoneRepository.findAllById(zoneIds);
+
+        if (selectedZones.isEmpty()) {
+            throw new RuntimeException("Selected hazard zones not found");
+        }
+
         MonitoringJob job = MonitoringJob.builder()
                 .video(video)
+                .hazardZones(selectedZones)
                 .status("PENDING")
                 .progress(0)
                 .build();
 
         MonitoringJob saved = jobRepository.save(job);
 
-        // Send message to SQS
         MonitoringJobMessage message = new MonitoringJobMessage(
                 saved.getId(),
                 saved.getVideo().getFilePath()
@@ -75,7 +88,7 @@ public class MonitoringServiceImpl implements MonitoringService {
 
         Video video = job.getVideo();
 
-        List<HazardZoneResponseDTO> zones = video.getHazardZones()
+        List<HazardZoneResponseDTO> zones = job.getHazardZones()
                 .stream()
                 .map(zone -> new HazardZoneResponseDTO(
                         zone.getId(),
@@ -99,12 +112,10 @@ public class MonitoringServiceImpl implements MonitoringService {
         MonitoringJob job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        // If already completed or failed, ignore updates
         if ("COMPLETED".equals(job.getStatus()) || "FAILED".equals(job.getStatus())) {
             return;
         }
 
-        // Update status first
         if (request.getStatus() != null) {
 
             job.updateStatus(request.getStatus());
@@ -114,7 +125,6 @@ public class MonitoringServiceImpl implements MonitoringService {
             }
         }
 
-        // Update progress only if not completed
         if (request.getProgress() != null &&
                 !"COMPLETED".equals(job.getStatus())) {
 

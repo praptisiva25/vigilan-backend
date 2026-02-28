@@ -25,15 +25,23 @@ public class MonitoringJob {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false)
     private Integer progress;
+
     private LocalDateTime startedAt;
     private LocalDateTime finishedAt;
 
     @PrePersist
     public void onCreate() {
         this.startedAt = LocalDateTime.now();
-        if (this.progress == null) this.progress = 0;
-        if (this.status == null) this.status = "PENDING";
+
+        if (this.progress == null) {
+            this.progress = 0;
+        }
+
+        if (this.status == null) {
+            this.status = "PENDING";
+        }
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,7 +50,16 @@ public class MonitoringJob {
     private Video video;
 
 
-    @OneToMany(mappedBy = "monitoringJob")
+    @ManyToMany
+    @JoinTable(
+            name = "monitoring_job_zones",
+            joinColumns = @JoinColumn(name = "job_id"),
+            inverseJoinColumns = @JoinColumn(name = "zone_id")
+    )
+    private List<HazardZone> hazardZones;
+
+
+    @OneToMany(mappedBy = "monitoringJob", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IntrusionEvent> intrusionEvents;
 
     public void updateProgress(Integer progress) {
@@ -51,6 +68,7 @@ public class MonitoringJob {
 
     public void updateStatus(String status) {
         this.status = status;
+
         if ("COMPLETED".equals(status) || "FAILED".equals(status)) {
             this.finishedAt = LocalDateTime.now();
         }

@@ -7,6 +7,8 @@ import com.vigilan.backend.service.MonitoringService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/monitoring")
 @RequiredArgsConstructor
@@ -17,9 +19,10 @@ public class MonitoringController {
     // Start Monitoring
     @PostMapping("/start/{videoId}")
     public MonitoringJobResponseDTO startMonitoring(
-            @PathVariable Long videoId ) {
+            @PathVariable Long videoId,
+            @RequestBody List<Long> zoneIds) {
 
-        return monitoringService.startMonitoring(videoId);
+        return monitoringService.startMonitoring(videoId, zoneIds);
     }
 
     // Get Job Status

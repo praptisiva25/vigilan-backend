@@ -26,13 +26,13 @@ public class HazardZoneServiceImpl implements HazardZoneService {
         Video video = videoRepository.findById(request.getVideoId())
                 .orElseThrow(() -> new RuntimeException("Video not found"));
 
-        HazardZone zone = new HazardZone();
-        zone.setVideo(video);
-        zone.setName(request.getName());
-        zone.setSeverity(request.getSeverity());
-        zone.setPolygonCoordinates(request.getPolygonCoordinates());
-        zone.setAllowedObjects(request.getAllowedObjects());
-        zone.setBlockedObjects(request.getBlockedObjects());
+        HazardZone zone = HazardZone.builder()
+                .video(video)
+                .name(request.getName())
+                .severity(request.getSeverity())
+                .polygonCoordinates(request.getPolygonCoordinates())
+                .blockedObjects(request.getBlockedObjects())
+                .build();
 
         HazardZone saved = hazardZoneRepository.save(zone);
 
@@ -54,7 +54,6 @@ public class HazardZoneServiceImpl implements HazardZoneService {
                 zone.getName(),
                 zone.getSeverity(),
                 zone.getPolygonCoordinates(),
-                zone.getAllowedObjects(),
                 zone.getBlockedObjects()
         );
     }

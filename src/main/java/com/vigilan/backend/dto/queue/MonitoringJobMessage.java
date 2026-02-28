@@ -8,6 +8,5 @@ import lombok.Data;
 public class MonitoringJobMessage {
 
     private Long jobId;
-    private String videoPath;   // <-- change to String
-    private String mode;
+    private String videoPath;
 }

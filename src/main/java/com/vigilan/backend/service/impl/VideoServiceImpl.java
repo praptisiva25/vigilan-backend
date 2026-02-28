@@ -1,9 +1,12 @@
 package com.vigilan.backend.service.impl;
 
 import com.vigilan.backend.dto.response.VideoResponseDTO;
+import com.vigilan.backend.entity.User;
 import com.vigilan.backend.entity.Video;
+import com.vigilan.backend.repository.UserRepository;
 import com.vigilan.backend.repository.VideoRepository;
 import com.vigilan.backend.service.VideoService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,9 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,6 +27,7 @@ public class VideoServiceImpl implements VideoService {
 
     private final S3Client s3Client;
     private final VideoRepository videoRepository;
+    private final UserRepository userRepository;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -31,8 +35,23 @@ public class VideoServiceImpl implements VideoService {
     @Override
     public VideoResponseDTO uploadVideo(MultipartFile file,
                                         String cameraId,
-                                        Double latitude, Double longitude) throws IOException {
+                                        Double latitude,
+                                        Double longitude,
+                                        String userId,
+                                        String email) throws IOException {
 
+        // Ensure user exists
+        User user = userRepository.findById(userId)
+                .orElseGet(() ->
+                        userRepository.save(
+                                User.builder()
+                                        .id(userId)
+                                        .email(email)
+                                        .build()
+                        )
+                );
+
+        // Upload to S3
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         PutObjectRequest request = PutObjectRequest.builder()
@@ -46,25 +65,19 @@ public class VideoServiceImpl implements VideoService {
 
         String fileUrl = "https://" + bucketName + ".s3.amazonaws.com/" + fileName;
 
-        Video video = new Video();
-        video.setName(file.getOriginalFilename());
-        video.setCameraId(cameraId);
-        video.setLatitude(latitude);
-        video.setLongitude(longitude);
-        video.setFilePath(fileUrl);
-        video.setUploadedAt(LocalDateTime.now());
+        // Build Video entity
+        Video video = Video.builder()
+                .name(file.getOriginalFilename())
+                .cameraId(cameraId)
+                .latitude(latitude)
+                .longitude(longitude)
+                .filePath(fileUrl)
+                .user(user)
+                .build();
 
         Video saved = videoRepository.save(video);
 
         return mapToDTO(saved);
-    }
-
-    @Override
-    public List<VideoResponseDTO> getAllVideos() {
-        return videoRepository.findAll()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
     }
 
     private VideoResponseDTO mapToDTO(Video video) {
@@ -78,4 +91,40 @@ public class VideoServiceImpl implements VideoService {
                 video.getUploadedAt()
         );
     }
+
+    @Override
+    public List<VideoResponseDTO> getAllVideos(String userId) {
+
+        return videoRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteVideo(Long videoId, String userId) {
+
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(() -> new RuntimeException("Video not found"));
+
+        // Ensure video belongs to user
+        if (!video.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        // Delete from S3
+        String fileUrl = video.getFilePath();
+        String key = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build());
+
+        // Delete from DB (cascade handles rest)
+        videoRepository.delete(video);
+    }
+
+
 }

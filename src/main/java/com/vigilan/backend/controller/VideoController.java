@@ -4,6 +4,8 @@ import com.vigilan.backend.dto.response.VideoResponseDTO;
 import com.vigilan.backend.service.VideoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,17 +24,39 @@ public class VideoController {
             @RequestParam MultipartFile file,
             @RequestParam String cameraId,
             @RequestParam Double latitude,
-            @RequestParam Double longitude
+            @RequestParam Double longitude,
+            @AuthenticationPrincipal Jwt jwt
     ) throws IOException {
 
+        String userId = jwt.getSubject();
+        String email = jwt.getClaim("email");
+
         VideoResponseDTO response =
-                videoService.uploadVideo(file, cameraId, latitude, longitude);
+                videoService.uploadVideo(file, cameraId, latitude, longitude, userId, email);
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<VideoResponseDTO>> getAllVideos() {
-        return ResponseEntity.ok(videoService.getAllVideos());
+    public ResponseEntity<List<VideoResponseDTO>> getAllVideos(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+
+        String userId = jwt.getSubject();
+
+        return ResponseEntity.ok(videoService.getAllVideos(userId));
+    }
+
+    @DeleteMapping("/{videoId}")
+    public ResponseEntity<Void> deleteVideo(
+            @PathVariable Long videoId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+
+        String userId = jwt.getSubject();
+
+        videoService.deleteVideo(videoId, userId);
+
+        return ResponseEntity.noContent().build();
     }
 }

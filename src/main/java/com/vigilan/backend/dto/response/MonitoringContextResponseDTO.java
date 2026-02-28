@@ -9,7 +9,6 @@ import java.util.List;
 public class MonitoringContextResponseDTO {
 
     private Long jobId;
-    private String mode;
     private String videoPath;
     private List<HazardZoneResponseDTO> hazardZones;
 }

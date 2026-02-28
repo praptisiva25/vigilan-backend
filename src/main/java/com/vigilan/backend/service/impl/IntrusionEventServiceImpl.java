@@ -25,7 +25,6 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
     @Override
     public void createIntrusion(IntrusionEventRequestDTO request) {
 
-        // 🔥 1. Basic validation
         if (request.getMonitoringJobId() == null ||
                 request.getHazardZoneId() == null ||
                 request.getObjectId() == null ||
@@ -35,12 +34,10 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
             return;
         }
 
-        // 🔥 2. Ignore micro intrusions (noise filter)
-        if (request.getDurationSeconds() < 1.0) {
+        if (request.getDurationSeconds() < 0.6) {
             return;
         }
 
-        // 🔥 3. Prevent duplicate events (SQS retry safe)
         boolean exists = intrusionEventRepository
                 .existsByMonitoringJob_IdAndObjectIdAndEntryTimeSeconds(
                         request.getMonitoringJobId(),
@@ -52,22 +49,21 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
             return;
         }
 
-        // 🔥 4. Fetch related entities
         MonitoringJob job = monitoringJobRepository.findById(request.getMonitoringJobId())
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
         HazardZone zone = hazardZoneRepository.findById(request.getHazardZoneId())
                 .orElseThrow(() -> new RuntimeException("Zone not found"));
 
-        // 🔥 5. Create and save event
-        IntrusionEvent event = new IntrusionEvent();
-        event.setMonitoringJob(job);
-        event.setHazardZone(zone);
-        event.setObjectId(request.getObjectId());
-        event.setEntryTimeSeconds(request.getEntryTimeSeconds());
-        event.setExitTimeSeconds(request.getExitTimeSeconds());
-        event.setDurationSeconds(request.getDurationSeconds());
-        event.setScreenshotUrl(request.getScreenshotUrl());
+        IntrusionEvent event = IntrusionEvent.builder()
+                .monitoringJob(job)
+                .hazardZone(zone)
+                .objectId(request.getObjectId())
+                .entryTimeSeconds(request.getEntryTimeSeconds())
+                .exitTimeSeconds(request.getExitTimeSeconds())
+                .durationSeconds(request.getDurationSeconds())
+                .screenshotUrl(request.getScreenshotUrl())
+                .build();
 
         intrusionEventRepository.save(event);
     }

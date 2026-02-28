@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/monitoring")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class MonitoringController {
 
     private final MonitoringService monitoringService;
@@ -18,10 +17,9 @@ public class MonitoringController {
     // Start Monitoring
     @PostMapping("/start/{videoId}")
     public MonitoringJobResponseDTO startMonitoring(
-            @PathVariable Long videoId,
-            @RequestParam String mode) {
+            @PathVariable Long videoId ) {
 
-        return monitoringService.startMonitoring(videoId, mode);
+        return monitoringService.startMonitoring(videoId);
     }
 
     // Get Job Status

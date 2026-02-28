@@ -26,25 +26,23 @@ public class MonitoringServiceImpl implements MonitoringService {
     private final QueueService queueService;
 
     @Override
-    public MonitoringJobResponseDTO startMonitoring(Long videoId, String mode) {
+    public MonitoringJobResponseDTO startMonitoring(Long videoId) {
 
         Video video = videoRepository.findById(videoId)
                 .orElseThrow(() -> new RuntimeException("Video not found"));
 
-        MonitoringJob job = new MonitoringJob();
-        job.setVideo(video);
-        job.setMode(mode);
-        job.setStatus("PENDING");
-        job.setProgress(0);
-        job.setStartedAt(LocalDateTime.now());
+        MonitoringJob job = MonitoringJob.builder()
+                .video(video)
+                .status("PENDING")
+                .progress(0)
+                .build();
 
         MonitoringJob saved = jobRepository.save(job);
 
         // Send message to SQS
         MonitoringJobMessage message = new MonitoringJobMessage(
                 saved.getId(),
-                saved.getVideo().getFilePath(),
-                saved.getMode()
+                saved.getVideo().getFilePath()
         );
 
         queueService.sendMonitoringJob(message);
@@ -84,14 +82,12 @@ public class MonitoringServiceImpl implements MonitoringService {
                         zone.getName(),
                         zone.getSeverity(),
                         zone.getPolygonCoordinates(),
-                        zone.getAllowedObjects(),
                         zone.getBlockedObjects()
                 ))
                 .toList();
 
         return new MonitoringContextResponseDTO(
                 job.getId(),
-                job.getMode(),
                 video.getFilePath(),
                 zones
         );
@@ -103,30 +99,27 @@ public class MonitoringServiceImpl implements MonitoringService {
         MonitoringJob job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        // 🔒 If already completed or failed, ignore further updates
+        // If already completed or failed, ignore updates
         if ("COMPLETED".equals(job.getStatus()) || "FAILED".equals(job.getStatus())) {
             return;
         }
 
         // Update status first
         if (request.getStatus() != null) {
-            job.setStatus(request.getStatus());
+
+            job.updateStatus(request.getStatus());
 
             if ("COMPLETED".equals(request.getStatus())) {
-                job.setProgress(100);  // Force 100%
-                job.setFinishedAt(LocalDateTime.now());
-            }
-
-            if ("FAILED".equals(request.getStatus())) {
-                job.setFinishedAt(LocalDateTime.now());
+                job.updateProgress(100);
             }
         }
 
-
-        if (request.getProgress() != null && !"COMPLETED".equals(job.getStatus())) {
+        // Update progress only if not completed
+        if (request.getProgress() != null &&
+                !"COMPLETED".equals(job.getStatus())) {
 
             int safeProgress = Math.min(request.getProgress(), 99);
-            job.setProgress(safeProgress);
+            job.updateProgress(safeProgress);
         }
 
         jobRepository.save(job);

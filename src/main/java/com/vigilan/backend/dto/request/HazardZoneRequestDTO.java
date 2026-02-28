@@ -9,6 +9,5 @@ public class HazardZoneRequestDTO {
     private String name;
     private String severity;
     private String polygonCoordinates;
-    private String allowedObjects;
     private String blockedObjects;
 }

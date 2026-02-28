@@ -8,8 +8,14 @@ import java.util.List;
 
 public interface VideoService {
 
-    VideoResponseDTO uploadVideo(MultipartFile file, String cameraId, Double latitude, Double longitude) throws IOException;;
+    VideoResponseDTO uploadVideo(MultipartFile file,
+                                 String cameraId,
+                                 Double latitude,
+                                 Double longitude,
+                                 String userId,
+                                 String email) throws IOException;
 
-    List<VideoResponseDTO> getAllVideos();
+    List<VideoResponseDTO> getAllVideos(String userId);
 
+    void deleteVideo(Long videoId, String userId);
 }

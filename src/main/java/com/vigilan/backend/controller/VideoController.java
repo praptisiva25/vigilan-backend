@@ -39,12 +39,13 @@ public class VideoController {
 
     @GetMapping
     public ResponseEntity<List<VideoResponseDTO>> getAllVideos(
+            @RequestParam(required = false) String search,
             @AuthenticationPrincipal Jwt jwt
     ) {
 
         String userId = jwt.getSubject();
 
-        return ResponseEntity.ok(videoService.getAllVideos(userId));
+        return ResponseEntity.ok(videoService.getAllVideos(userId, search));
     }
 
     @DeleteMapping("/{videoId}")

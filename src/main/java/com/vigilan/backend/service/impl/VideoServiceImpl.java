@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -93,12 +93,20 @@ public class VideoServiceImpl implements VideoService {
     }
 
     @Override
-    public List<VideoResponseDTO> getAllVideos(String userId) {
+    public List<VideoResponseDTO> getAllVideos(String userId,String search) {
 
-        return videoRepository.findByUserId(userId)
-                .stream()
+        List<Video> videos;
+
+        if (search != null && !search.isBlank()) {
+            videos = videoRepository
+                    .findByUserIdAndNameContainingIgnoreCase(userId, search);
+        } else {
+            videos = videoRepository.findByUserId(userId);
+        }
+
+        return videos.stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

@@ -15,4 +15,6 @@ public interface MonitoringService {
     MonitoringContextResponseDTO getMonitoringContext(Long jobId);
 
     void updateMonitoringJob(Long jobId, MonitoringJobUpdateRequestDTO request);
+
+    List<MonitoringJobResponseDTO> getJobsByVideo(Long videoId);
 }

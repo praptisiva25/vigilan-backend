@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface VideoRepository extends JpaRepository<Video, Long> {
     List<Video> findByUserId(String userId);
+
+    List<Video> findByUserIdAndNameContainingIgnoreCase(String userId, String search);
 }

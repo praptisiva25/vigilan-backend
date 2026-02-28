@@ -45,4 +45,11 @@ public class MonitoringController {
 
         monitoringService.updateMonitoringJob(jobId, request);
     }
+
+    @GetMapping("/video/{videoId}")
+    public List<MonitoringJobResponseDTO> getJobsByVideo(
+            @PathVariable Long videoId) {
+
+        return monitoringService.getJobsByVideo(videoId);
+    }
 }

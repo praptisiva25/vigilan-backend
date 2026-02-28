@@ -134,4 +134,18 @@ public class MonitoringServiceImpl implements MonitoringService {
 
         jobRepository.save(job);
     }
+
+    @Override
+    public List<MonitoringJobResponseDTO> getJobsByVideo(Long videoId) {
+
+        return jobRepository
+                .findByVideo_IdOrderByIdDesc(videoId)
+                .stream()
+                .map(job -> new MonitoringJobResponseDTO(
+                        job.getId(),
+                        job.getStatus(),
+                        job.getProgress()
+                ))
+                .toList();
+    }
 }

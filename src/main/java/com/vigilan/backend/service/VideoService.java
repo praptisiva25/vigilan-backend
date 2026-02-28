@@ -15,7 +15,7 @@ public interface VideoService {
                                  String userId,
                                  String email) throws IOException;
 
-    List<VideoResponseDTO> getAllVideos(String userId);
+    List<VideoResponseDTO> getAllVideos(String userId, String search);
 
     void deleteVideo(Long videoId, String userId);
 }

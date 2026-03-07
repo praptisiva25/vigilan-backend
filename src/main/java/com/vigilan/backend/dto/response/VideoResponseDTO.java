@@ -12,6 +12,7 @@ public class VideoResponseDTO {
     private Long id;
     private String name;
     private String cameraId;
+    private String description;
     private Double latitude;
     private Double longitude;
     private String filePath;

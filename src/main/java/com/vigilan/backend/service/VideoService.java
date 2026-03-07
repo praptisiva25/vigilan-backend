@@ -10,6 +10,7 @@ public interface VideoService {
 
     VideoResponseDTO uploadVideo(MultipartFile file,
                                  String cameraId,
+                                 String description,
                                  Double latitude,
                                  Double longitude,
                                  String userId,

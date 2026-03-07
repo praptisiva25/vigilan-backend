@@ -22,6 +22,7 @@ public class Video {
 
     private String name;
     private String cameraId;
+    private String description;
     private Double latitude;
     private Double longitude;
 

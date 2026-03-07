@@ -34,7 +34,7 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
             return;
         }
 
-        if (request.getDurationSeconds() < 0.6) {
+        if (request.getDurationSeconds() < 0.5) {
             return;
         }
 

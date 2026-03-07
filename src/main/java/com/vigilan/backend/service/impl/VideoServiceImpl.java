@@ -1,6 +1,7 @@
 package com.vigilan.backend.service.impl;
 
 import com.vigilan.backend.dto.response.VideoResponseDTO;
+import com.vigilan.backend.entity.MonitoringJob;
 import com.vigilan.backend.entity.User;
 import com.vigilan.backend.entity.Video;
 import com.vigilan.backend.repository.UserRepository;
@@ -29,12 +30,13 @@ public class VideoServiceImpl implements VideoService {
     private final VideoRepository videoRepository;
     private final UserRepository userRepository;
 
-    @Value("${aws.s3.bucket}")
+    @Value("${AWS_S3_BUCKET}")
     private String bucketName;
 
     @Override
     public VideoResponseDTO uploadVideo(MultipartFile file,
                                         String cameraId,
+                                        String description,
                                         Double latitude,
                                         Double longitude,
                                         String userId,
@@ -85,6 +87,7 @@ public class VideoServiceImpl implements VideoService {
                 video.getId(),
                 video.getName(),
                 video.getCameraId(),
+                video.getDescription(),
                 video.getLatitude(),
                 video.getLongitude(),
                 video.getFilePath(),
@@ -109,19 +112,21 @@ public class VideoServiceImpl implements VideoService {
                 .toList();
     }
 
-    @Override
     @Transactional
+    @Override
     public void deleteVideo(Long videoId, String userId) {
 
         Video video = videoRepository.findById(videoId)
                 .orElseThrow(() -> new RuntimeException("Video not found"));
 
-        // Ensure video belongs to user
         if (!video.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized");
         }
 
-        // Delete from S3
+        for (MonitoringJob job : video.getMonitoringJobs()) {
+            job.getHazardZones().clear();
+        }
+
         String fileUrl = video.getFilePath();
         String key = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
 
@@ -130,7 +135,6 @@ public class VideoServiceImpl implements VideoService {
                 .key(key)
                 .build());
 
-        // Delete from DB (cascade handles rest)
         videoRepository.delete(video);
     }
 

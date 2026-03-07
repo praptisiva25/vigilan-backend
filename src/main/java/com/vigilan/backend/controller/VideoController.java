@@ -23,6 +23,7 @@ public class VideoController {
     public ResponseEntity<VideoResponseDTO> uploadVideo(
             @RequestParam MultipartFile file,
             @RequestParam String cameraId,
+            @RequestParam String description,
             @RequestParam Double latitude,
             @RequestParam Double longitude,
             @AuthenticationPrincipal Jwt jwt
@@ -32,7 +33,7 @@ public class VideoController {
         String email = jwt.getClaim("email");
 
         VideoResponseDTO response =
-                videoService.uploadVideo(file, cameraId, latitude, longitude, userId, email);
+                videoService.uploadVideo(file, cameraId, description, latitude, longitude, userId, email);
 
         return ResponseEntity.ok(response);
     }

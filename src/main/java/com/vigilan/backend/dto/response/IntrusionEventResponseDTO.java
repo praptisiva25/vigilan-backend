@@ -18,4 +18,7 @@ public class IntrusionEventResponseDTO {
     private Double durationSeconds;
 
     private String screenshotUrl;
+    private String severity;
+    private String blockedObjects;
+    private String name;
 }

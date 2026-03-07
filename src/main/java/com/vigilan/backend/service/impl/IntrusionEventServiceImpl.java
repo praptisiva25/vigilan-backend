@@ -10,6 +10,7 @@ import com.vigilan.backend.repository.IntrusionEventRepository;
 import com.vigilan.backend.repository.MonitoringJobRepository;
 import com.vigilan.backend.service.IntrusionEventService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
     private final IntrusionEventRepository intrusionEventRepository;
     private final MonitoringJobRepository monitoringJobRepository;
     private final HazardZoneRepository hazardZoneRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public void createIntrusion(IntrusionEventRequestDTO request) {
@@ -65,7 +67,14 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
                 .screenshotUrl(request.getScreenshotUrl())
                 .build();
 
-        intrusionEventRepository.save(event);
+        IntrusionEvent saved = intrusionEventRepository.save(event);
+
+        IntrusionEventResponseDTO dto = mapToDTO(saved);
+
+        messagingTemplate.convertAndSend(
+                "/topic/intrusions/" + job.getId(),
+                dto
+        );
     }
 
     private IntrusionEventResponseDTO mapToDTO(IntrusionEvent event) {
@@ -77,7 +86,10 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
                 event.getEntryTimeSeconds(),
                 event.getExitTimeSeconds(),
                 event.getDurationSeconds(),
-                event.getScreenshotUrl()
+                event.getScreenshotUrl(),
+                event.getHazardZone().getSeverity(),
+                event.getHazardZone().getBlockedObjects(),
+                event.getHazardZone().getName()
         );
     }
 

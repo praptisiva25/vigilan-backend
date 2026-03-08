@@ -3,6 +3,8 @@ package com.vigilan.backend.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 public class IntrusionEventResponseDTO {
@@ -21,4 +23,6 @@ public class IntrusionEventResponseDTO {
     private String severity;
     private String blockedObjects;
     private String name;
+    private LocalDateTime startedAt;
+
 }

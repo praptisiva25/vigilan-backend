@@ -50,6 +50,7 @@ public class IntrusionEvent {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private HazardZone hazardZone;
 
+
     public void markExit(Double exitTimeSeconds) {
         this.exitTimeSeconds = exitTimeSeconds;
         if (exitTimeSeconds != null && entryTimeSeconds != null) {

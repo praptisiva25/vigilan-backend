@@ -2,6 +2,7 @@ package com.vigilan.backend.service.impl;
 
 import com.vigilan.backend.dto.request.IntrusionEventRequestDTO;
 import com.vigilan.backend.dto.response.IntrusionEventResponseDTO;
+import com.vigilan.backend.dto.response.IntrusionStatsDTO;
 import com.vigilan.backend.entity.HazardZone;
 import com.vigilan.backend.entity.IntrusionEvent;
 import com.vigilan.backend.entity.MonitoringJob;
@@ -13,7 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +41,7 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
             return;
         }
 
-        if (request.getDurationSeconds() < 0.5) {
+        if (request.getDurationSeconds() < 0.7) {
             return;
         }
 
@@ -89,7 +94,9 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
                 event.getScreenshotUrl(),
                 event.getHazardZone().getSeverity(),
                 event.getHazardZone().getBlockedObjects(),
-                event.getHazardZone().getName()
+                event.getHazardZone().getName(),
+                event.getMonitoringJob().getStartedAt()
+
         );
     }
 
@@ -99,6 +106,36 @@ public class IntrusionEventServiceImpl implements IntrusionEventService {
                 .findByMonitoringJob_Id(jobId)
                 .stream()
                 .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Override
+    public Map<String, Long> getIntrusionsPerCamera() {
+
+        List<IntrusionEvent> events = intrusionEventRepository.findAll();
+
+        return events.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getMonitoringJob().getVideo().getName(),
+                        Collectors.counting()
+                ));
+    }
+
+    @Override
+    public List<IntrusionStatsDTO> getIntrusionStatsByVideo(Long videoId) {
+
+        List<IntrusionEvent> events =
+                intrusionEventRepository.findByMonitoringJob_Video_Id(videoId);
+
+        Map<LocalDate, Long> stats = events.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getMonitoringJob().getStartedAt().toLocalDate(),
+                        Collectors.counting()
+                ));
+
+        return stats.entrySet().stream()
+                .map(e -> new IntrusionStatsDTO(e.getKey(), e.getValue()))
+                .sorted(Comparator.comparing(IntrusionStatsDTO::getDate))
                 .toList();
     }
 }

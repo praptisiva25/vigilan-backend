@@ -63,7 +63,8 @@ public class MonitoringServiceImpl implements MonitoringService {
         return new MonitoringJobResponseDTO(
                 saved.getId(),
                 saved.getStatus(),
-                saved.getProgress()
+                saved.getProgress(),
+                saved.getStartedAt()
         );
     }
 
@@ -76,7 +77,8 @@ public class MonitoringServiceImpl implements MonitoringService {
         return new MonitoringJobResponseDTO(
                 job.getId(),
                 job.getStatus(),
-                job.getProgress()
+                job.getProgress(),
+                job.getStartedAt()
         );
     }
 
@@ -144,7 +146,8 @@ public class MonitoringServiceImpl implements MonitoringService {
                 .map(job -> new MonitoringJobResponseDTO(
                         job.getId(),
                         job.getStatus(),
-                        job.getProgress()
+                        job.getProgress(),
+                        job.getStartedAt()
                 ))
                 .toList();
     }

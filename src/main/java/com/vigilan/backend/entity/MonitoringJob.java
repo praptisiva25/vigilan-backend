@@ -59,6 +59,7 @@ public class MonitoringJob {
     private List<HazardZone> hazardZones;
 
 
+
     @OneToMany(mappedBy = "monitoringJob", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IntrusionEvent> intrusionEvents;
 

@@ -1,6 +1,7 @@
 package com.vigilan.backend.service;
 
 import com.vigilan.backend.dto.request.IntrusionEventRequestDTO;
+import com.vigilan.backend.dto.response.CameraVideoStatsDTO;
 import com.vigilan.backend.dto.response.IntrusionEventResponseDTO;
 import com.vigilan.backend.dto.response.IntrusionStatsDTO;
 
@@ -14,5 +15,7 @@ public interface IntrusionEventService {
 
     Map<String, Long> getIntrusionsPerCamera();
 
-    List<IntrusionStatsDTO> getIntrusionStatsByVideo(Long videoId);
+    Map<String, Object> getStatsByCamera(String cameraId);
+
+    Map<String, Long> getSeverityByVideo(Long videoId);
 }

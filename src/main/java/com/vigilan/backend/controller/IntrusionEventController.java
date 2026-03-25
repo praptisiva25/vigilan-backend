@@ -2,7 +2,6 @@ package com.vigilan.backend.controller;
 
 import com.vigilan.backend.dto.request.IntrusionEventRequestDTO;
 import com.vigilan.backend.dto.response.IntrusionEventResponseDTO;
-import com.vigilan.backend.dto.response.IntrusionStatsDTO;
 import com.vigilan.backend.service.IntrusionEventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -27,13 +26,18 @@ public class IntrusionEventController {
         return intrusionEventService.getByMonitoringJobId(jobId);
     }
 
-    @GetMapping("/stats/video/{videoId}")
-    public List<IntrusionStatsDTO> getStats(@PathVariable Long videoId) {
-        return intrusionEventService.getIntrusionStatsByVideo(videoId);
+    @GetMapping("/stats/camera/{cameraId}")
+    public Map<String, Object> getStatsByCamera(@PathVariable String cameraId) {
+        return intrusionEventService.getStatsByCamera(cameraId);
     }
 
     @GetMapping("/stats/cameras")
     public Map<String, Long> getIntrusionsPerCamera() {
         return intrusionEventService.getIntrusionsPerCamera();
+    }
+
+    @GetMapping("/stats/video/{videoId}/severity")
+    public Map<String, Long> getVideoSeverity(@PathVariable Long videoId) {
+        return intrusionEventService.getSeverityByVideo(videoId);
     }
 }

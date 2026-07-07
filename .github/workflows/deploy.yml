@@ -1,0 +1,40 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - dev2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            cd ~/vigilan-backend
+
+            git fetch origin
+            git checkout dev2
+            git pull origin dev2
+
+            docker build -t vigilan-backend .
+
+            docker stop vigilan-backend || true
+            docker rm vigilan-backend || true
+
+            docker run -d \
+              --name vigilan-backend \
+              --restart unless-stopped \
+              --env-file .env \
+              -p 8080:8080 \
+              vigilan-backend

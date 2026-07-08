@@ -34,7 +34,12 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:3000","http://13.234.32.80"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://13.234.32.80",
+                "https://vigilan-ebon.vercel.app",
+                "https://vigilan.online",
+                "https://www.vigilan.online"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
